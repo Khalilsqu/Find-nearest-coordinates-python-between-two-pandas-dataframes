@@ -272,7 +272,7 @@ if grid_elevation_points and profiles_points:
             data=df,
             get_position=["lon_prof", "lat_prof"],
             get_radius=5,
-            get_fill_color=["distance_difference", 0, 255],
+            get_fill_color="distance_difference",
             pickable=True,
             auto_highlight=True,
         )
