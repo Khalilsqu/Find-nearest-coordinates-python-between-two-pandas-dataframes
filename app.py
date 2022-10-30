@@ -1,11 +1,7 @@
-from urllib import request
+# from urllib import request
 import streamlit as st
 import pandas as pd
 from scipy import spatial
-import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import matplotlib.pyplot as plt
 import pyproj
 from streamlit_lottie import st_lottie
 import requests
@@ -253,7 +249,7 @@ if grid_elevation_points and profiles_points:
 
         # fig2.colorbar(scatter, ax=ax, label='Distance difference (m)')
 
-        request = cimgt.GoogleTiles(style="satellite")
+        # request = cimgt.GoogleTiles(style="satellite")
 
         # ax.add_image(request, increase_res, interpolation='spline36')
         # gl = ax.gridlines(draw_labels=True, alpha=0.2)
