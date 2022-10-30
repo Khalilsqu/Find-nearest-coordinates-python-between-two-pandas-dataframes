@@ -261,85 +261,85 @@ if grid_elevation_points and profiles_points:
 
         # st.pyplot(fig2)
 
-        fig2 = px.scatter_mapbox(df, lat="lat_prof", lon="lon_prof",
-                                 color="distance_difference",
-                                 hover_data=['lon_prof', 'lat_prof',
-                                             'lon_dem', 'lat_dem'],
-                                 size_max=50,
-                                 )
+        # fig2 = px.scatter_mapbox(df, lat="lat_prof", lon="lon_prof",
+        #                          color="distance_difference",
+        #                          hover_data=['lon_prof', 'lat_prof',
+        #                                      'lon_dem', 'lat_dem'],
+        #                          size_max=50,
+        #                          )
 
-        fig2.update_layout(mapbox_style="stamen-terrain",
-                           margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                           width=800, height=800,
-                           )
+        # fig2.update_layout(mapbox_style="stamen-terrain",
+        #                    margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        #                    width=800, height=800,
+        #                    )
 
-        fig2.update_layout(
-            coloraxis_colorbar=dict(
-                title="Distance difference (m)",
-                thicknessmode="pixels", thickness=10),
-            mapbox_zoom=15, mapbox_center={"lat": df['lat_prof'].mean(),
-                                           "lon": df['lon_prof'].mean()},
-        )
-        show_dme = st.checkbox("Show DEM points", value=False)
-        if show_dme:
-            fig2.add_trace(go.Scattermapbox(
-                lat=dme['lat'],
-                lon=dme['lon'],
-                mode='markers',
-                marker=go.scattermapbox.Marker(
-                    size=1,
-                    color='black',
-                    opacity=0.2
-                ),
-                text=['DEM points'],
-                hoverinfo='text'
-            ))
+        # fig2.update_layout(
+        #     coloraxis_colorbar=dict(
+        #         title="Distance difference (m)",
+        #         thicknessmode="pixels", thickness=10),
+        #     mapbox_zoom=15, mapbox_center={"lat": df['lat_prof'].mean(),
+        #                                    "lon": df['lon_prof'].mean()},
+        # )
+        # show_dme = st.checkbox("Show DEM points", value=False)
+        # if show_dme:
+        #     fig2.add_trace(go.Scattermapbox(
+        #         lat=dme['lat'],
+        #         lon=dme['lon'],
+        #         mode='markers',
+        #         marker=go.scattermapbox.Marker(
+        #             size=1,
+        #             color='black',
+        #             opacity=0.2
+        #         ),
+        #         text=['DEM points'],
+        #         hoverinfo='text'
+        #     ))
 
-        st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
+        # st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
 
-        pitch = st.slider(
-            "Pitch",
-            min_value=0,
-            max_value=90,
-            step=1,
-            value=50,
-            help="Pitch of the profile line")
+        # pitch = st.slider(
+        #     "Pitch",
+        #     min_value=0,
+        #     max_value=90,
+        #     step=1,
+        #     value=50,
+        #     help="Pitch of the profile line")
 
-        view = pdk.data_utils.compute_view(df[['lon_prof', 'lat_prof']])
-        view.pitch = pitch
-        view.bearing = 0
+        # view = pdk.data_utils.compute_view(df[['lon_prof', 'lat_prof']])
+        # view.pitch = pitch
+        # view.bearing = 0
 
-        column_layer = pdk.Layer(
-            "ColumnLayer",
-            data=df,
-            get_position=["lon_prof", "lat_prof"],
-            get_elevation="z",
-            elevation_scale=50,
-            elevation_range=[0, 1000],
-            radius=5,
-            get_fill_color=["distance_difference", 0, 100],
-            pickable=True,
-            auto_highlight=True,
-            extruded=True,
-            coverage=1,
-            wireframe=True,
-            fp64=True,
-        )
+        # column_layer = pdk.Layer(
+        #     "ColumnLayer",
+        #     data=df,
+        #     get_position=["lon_prof", "lat_prof"],
+        #     get_elevation="z",
+        #     elevation_scale=50,
+        #     elevation_range=[0, 1000],
+        #     radius=5,
+        #     get_fill_color=["distance_difference", 0, 100],
+        #     pickable=True,
+        #     auto_highlight=True,
+        #     extruded=True,
+        #     coverage=1,
+        #     wireframe=True,
+        #     fp64=True,
+        # )
 
-        tooltip = {
-            "html": " elevation: <b>{z}</b> distance difference<b>{distance_differece}</b>",
-            "style": {"background": "grey", "color": "white", "font-family": '"Helvetica Neue", Arial', "z-index": "10000"},
-        }
+        # tooltip = {
+        #     "html": " elevation: <b>{z}</b> distance difference<b>{distance_differece}</b>",
+        #     "style": {"background": "grey", "color": "white", "font-family": '"Helvetica Neue", Arial', "z-index": "10000"},
+        # }
 
-        r = pdk.Deck(
-            column_layer,
-            initial_view_state=view,
-            tooltip=tooltip,
-            map_provider="mapbox",
-            map_style=pdk.map_styles.SATELLITE,
-        )
+        # r = pdk.Deck(
+        #     column_layer,
+        #     initial_view_state=view,
+        #     tooltip=tooltip,
+        #     map_provider="mapbox",
+        #     map_style=pdk.map_styles.SATELLITE,
+        # )
 
-        st.pydeck_chart(r)
+        # st.pydeck_chart(r)
 
     except Exception as e:
         st.write(e)
