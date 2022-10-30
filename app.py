@@ -10,6 +10,8 @@ import pyproj
 from streamlit_lottie import st_lottie
 import requests
 import plotly.express as px
+import plotly.graph_objects as go
+import pydeck as pdk
 
 
 st.set_page_config(
@@ -210,7 +212,6 @@ if grid_elevation_points and profiles_points:
                             color='distance_difference',
                             hover_data=['lon_prof', 'lat_prof',
                                         'lon_dem', 'lat_dem'],
-                            title="Nearest neighbor points in 3D space",
                             )
 
         fig.update_layout(scene=dict(
@@ -224,45 +225,125 @@ if grid_elevation_points and profiles_points:
 
         st.plotly_chart(fig, use_container_width=True, config=plotly_config)
 
-        fig2 = plt.figure()
-        ax = fig2.add_subplot(111, projection=ccrs.PlateCarree())
-        ax.set_extent([df['lon_prof'].min(), df['lon_prof'].max(),
-                       df['lat_prof'].min(), df['lat_prof'].max()],
-                      crs=ccrs.PlateCarree())
-        ax.coastlines(resolution='10m', color='black', linewidth=1)
+        # fig2 = plt.figure()
+        # ax = fig2.add_subplot(111, projection=ccrs.PlateCarree())
+        # ax.set_extent([df['lon_prof'].min(), df['lon_prof'].max(),
+        #                df['lat_prof'].min(), df['lat_prof'].max()],
+        #               crs=ccrs.PlateCarree())
+        # ax.coastlines(resolution='10m', color='black', linewidth=1)
 
-        scatter = ax.scatter(df['lon_prof'], df['lat_prof'], c=df['distance_difference'], s=1,
-                             transform=ccrs.PlateCarree(),
-                             label='Profile points',
-                             cmap='viridis')
+        # scatter = ax.scatter(df['lon_prof'], df['lat_prof'], c=df['distance_difference'], s=1,
+        #                      transform=ccrs.PlateCarree(),
+        #                      label='Profile points',
+        #                      cmap='viridis')
 
-        show_dme = st.checkbox("Show DEM points", value=False)
-        increase_res = st.slider(
-            "Google map resolution. Increase the resolution of the google map.\nVery slow for large data",
-            min_value=10,
-            max_value=20,
-            step=1,
-            value=15,
-            help="Increase the resolution of the google map.\nVery slow for large data")
+        # show_dme = st.checkbox("Show DEM points", value=False)
+        # increase_res = st.slider(
+        #     "Google map resolution. Increase the resolution of the google map.\nVery slow for large data",
+        #     min_value=10,
+        #     max_value=20,
+        #     step=1,
+        #     value=15,
+        #     help="Increase the resolution of the google map.\nVery slow for large data")
 
-        if show_dme:
+        # if show_dme:
 
-            scatter2 = ax.scatter(dme['lon'], dme['lat'], c='k', s=0.0005,
-                                  transform=ccrs.PlateCarree(), label='DEM points')
+        #     scatter2 = ax.scatter(dme['lon'], dme['lat'], c='k', s=0.0005,
+        #                           transform=ccrs.PlateCarree(), label='DEM points')
 
-        fig2.colorbar(scatter, ax=ax, label='Distance difference (m)')
+        # fig2.colorbar(scatter, ax=ax, label='Distance difference (m)')
 
         request = cimgt.GoogleTiles(style="satellite")
 
-        ax.add_image(request, increase_res, interpolation='spline36')
-        gl = ax.gridlines(draw_labels=True, alpha=0.2)
-        gl.xlabels_top = gl.ylabels_right = False
-        gl.xformatter = LONGITUDE_FORMATTER
-        gl.yformatter = LATITUDE_FORMATTER
+        # ax.add_image(request, increase_res, interpolation='spline36')
+        # gl = ax.gridlines(draw_labels=True, alpha=0.2)
+        # gl.xlabels_top = gl.ylabels_right = False
+        # gl.xformatter = LONGITUDE_FORMATTER
+        # gl.yformatter = LATITUDE_FORMATTER
 
-        # ax.legend(loc='upper left', fontsize=10)
+        # # ax.legend(loc='upper left', fontsize=10)
 
-        st.pyplot(fig2)
+        # st.pyplot(fig2)
+
+        fig2 = px.scatter_mapbox(df, lat="lat_prof", lon="lon_prof",
+                                 color="distance_difference",
+                                 hover_data=['lon_prof', 'lat_prof',
+                                             'lon_dem', 'lat_dem'],
+                                 size_max=50,
+                                 )
+
+        fig2.update_layout(mapbox_style="stamen-terrain",
+                           margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                           width=800, height=800,
+                           )
+
+        fig2.update_layout(
+            coloraxis_colorbar=dict(
+                title="Distance difference (m)",
+                thicknessmode="pixels", thickness=10),
+            mapbox_zoom=15, mapbox_center={"lat": df['lat_prof'].mean(),
+                                           "lon": df['lon_prof'].mean()},
+        )
+        show_dme = st.checkbox("Show DEM points", value=False)
+        if show_dme:
+            fig2.add_trace(go.Scattermapbox(
+                lat=dme['lat'],
+                lon=dme['lon'],
+                mode='markers',
+                marker=go.scattermapbox.Marker(
+                    size=1,
+                    color='black',
+                    opacity=0.2
+                ),
+                text=['DEM points'],
+                hoverinfo='text'
+            ))
+
+        st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
+
+        pitch = st.slider(
+            "Pitch",
+            min_value=0,
+            max_value=90,
+            step=1,
+            value=50,
+            help="Pitch of the profile line")
+
+        view = pdk.data_utils.compute_view(df[['lon_prof', 'lat_prof']])
+        view.pitch = pitch
+        view.bearing = 0
+
+        column_layer = pdk.Layer(
+            "ColumnLayer",
+            data=df,
+            get_position=["lon_prof", "lat_prof"],
+            get_elevation="z",
+            elevation_scale=50,
+            elevation_range=[0, 1000],
+            radius=5,
+            get_fill_color=["distance_difference", 0, 100],
+            pickable=True,
+            auto_highlight=True,
+            extruded=True,
+            coverage=1,
+            wireframe=True,
+            fp64=True,
+        )
+
+        tooltip = {
+            "html": " elevation: <b>{z}</b> distance difference<b>{distance_differece}</b>",
+            "style": {"background": "grey", "color": "white", "font-family": '"Helvetica Neue", Arial', "z-index": "10000"},
+        }
+
+        r = pdk.Deck(
+            column_layer,
+            initial_view_state=view,
+            tooltip=tooltip,
+            map_provider="mapbox",
+            map_style=pdk.map_styles.SATELLITE,
+        )
+
+        st.pydeck_chart(r)
 
     except Exception as e:
         st.write(e)
