@@ -46,7 +46,7 @@ plotly_config = {
 }
 
 P = pyproj.Proj(proj='utm', zone=40, ellps='WGS84', preserve_units=True)
-G = pyproj.Proj(init='epsg:4326')
+G = pyproj.Proj(proj='latlong', ellps='WGS84', datum='WGS84')
 
 
 def utm_to_latlon(utm_x, utm_y):
@@ -192,6 +192,20 @@ if grid_elevation_points and profiles_points:
             st.write("Done!. You can download the result below")
 
         st.write("Nearest neighbor points")
+        with st.form(key='form'):
+            filter = st.slider(
+                "Filter nearest neighbor points by distance difference",
+                min_value=0.0,
+                max_value=float(df['distance_difference'].max()+1),
+                value=float(df['distance_difference'].max()),
+                step=0.1,
+                help="Filter nearest neighbor points by distance difference greater than the value",
+             )
+            submit = st.form_submit_button("Apply filter")
+
+        if submit:
+            df = df[df['distance_difference'] <= filter]
+    
         st.write(df)
 
         csv = convert_df(df)
@@ -217,9 +231,69 @@ if grid_elevation_points and profiles_points:
         ),
             margin=dict(l=0, r=0, b=0, t=0),
             width=800, height=800,
+
         )
 
         st.plotly_chart(fig, use_container_width=True, config=plotly_config)
+
+        fig2 = px.scatter(df, x='x_prof', y='y_prof',
+                            color='distance_difference',
+                            hover_data=['lon_prof', 'lat_prof',
+                                        'lon_dem', 'lat_dem'],
+                            )
+        
+        fig2.update_layout(
+            xaxis_title='x-coordinate',
+            yaxis_title='y-coordinate',
+            margin=dict(l=0, r=0, b=0, t=0),
+            width=800, height=800,
+            xaxis_tickformat=".0f",
+            yaxis_tickformat=".0f",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
+
+        fig3 = px.scatter_mapbox(df, lat="lat_prof", lon="lon_prof",
+                                    color='distance_difference',
+                                    hover_data=['x_prof', 'y_prof',
+                                                'lon_dem', 'lat_dem'],
+                                    zoom=15, height=800, width=800,
+                                    mapbox_style="stamen-terrain")
+        
+        fig3.update_layout(
+            margin=dict(l=0, r=0, b=0, t=0),
+            width=800, height=800,
+        )
+
+        st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
+
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=df,
+            get_position=["lon_prof", "lat_prof"],
+            get_radius=5,
+            get_fill_color=["distance_difference", 0, 255],
+            pickable=True,
+            auto_highlight=True,
+        )
+
+        view_state = pdk.ViewState(
+            latitude=df['lat_prof'].mean(),
+            longitude=df['lon_prof'].mean(),
+            zoom=16,
+            bearing=0,
+            pitch=0,
+        )
+
+        r = pdk.Deck(
+            layers=[layer],
+            initial_view_state=view_state,
+            map_provider="mapbox",
+            map_style=pdk.map_styles.SATELLITE,
+            tooltip={"text": "{lon_prof}, {lat_prof}, {distance_difference}"},
+        )
+
+        st.pydeck_chart(r)
 
         # fig2 = plt.figure()
         # ax = fig2.add_subplot(111, projection=ccrs.PlateCarree())
