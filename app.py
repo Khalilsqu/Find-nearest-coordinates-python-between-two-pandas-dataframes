@@ -7,7 +7,6 @@ from streamlit_lottie import st_lottie
 import requests
 import plotly.express as px
 import plotly.graph_objects as go
-import pydeck as pdk
 
 
 st.set_page_config(
@@ -192,16 +191,18 @@ if grid_elevation_points and profiles_points:
             st.write("Done!. You can download the result below")
 
         st.write("Nearest neighbor points")
-        with st.form(key='form'):
-            filter = st.slider(
-                "Filter nearest neighbor points by distance difference",
-                min_value=0.0,
-                max_value=float(df['distance_difference'].max()+1),
-                value=float(df['distance_difference'].max()),
-                step=0.1,
-                help="Filter nearest neighbor points by distance difference greater than the value",
-            )
-            submit = st.form_submit_button("Apply filter")
+
+        with st.sidebar:
+            with st.form(key='form'):
+                filter = st.number_input(
+                    "Filter nearest neighbor points by distance difference",
+                    min_value=0.0,
+                    max_value=float(df['distance_difference'].max()+1),
+                    value=float(df['distance_difference'].max()),
+                    step=0.1,
+                    help="Filter nearest neighbor points by distance difference greater than the value",
+                )
+                submit = st.form_submit_button("Apply filter")
 
         if submit:
             df = df[df['distance_difference'] <= filter]
@@ -210,13 +211,15 @@ if grid_elevation_points and profiles_points:
 
         csv = convert_df(df)
 
-        st.download_button(
-            "Press to Download",
-            csv,
-            "file.csv",
-            "text/csv",
-            key='download-csv'
-        )
+        with st.sidebar:
+
+            st.download_button(
+                "Press to Download the result",
+                csv,
+                "file.csv",
+                "text/csv",
+                key='download-csv'
+            )
 
         fig = px.scatter_3d(df, x='x_prof', y='y_prof', z='z',
                             color='distance_difference',
@@ -232,6 +235,11 @@ if grid_elevation_points and profiles_points:
             margin=dict(l=0, r=0, b=0, t=0),
             width=800, height=800,
 
+        )
+
+        fig.update_yaxes(
+            scaleanchor="x",
+            scaleratio=1,
         )
 
         st.plotly_chart(fig, use_container_width=True, config=plotly_config)
@@ -251,6 +259,11 @@ if grid_elevation_points and profiles_points:
             yaxis_tickformat=".0f",
         )
 
+        fig.update_yaxes(
+            scaleanchor="x",
+            scaleratio=1,
+        )
+
         st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
 
         fig3 = px.scatter_mapbox(df, lat="lat_prof", lon="lon_prof",
@@ -265,41 +278,12 @@ if grid_elevation_points and profiles_points:
             width=800, height=800,
         )
 
+        fig3.update_yaxes(
+            scaleanchor="x",
+            scaleratio=1,
+        )
+
         st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
-
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=df,
-            get_position=["lon_prof", "lat_prof"],
-            get_radius=10,
-            get_fill_color=["distance_difference", 140, 0],
-            pickable=True,
-            auto_highlight=True,
-            filled=True,
-            radius_scale=5,
-            radius_min_pixels=5,
-            radius_max_pixels=100,
-            line_width_min_pixels=1,
-
-        )
-
-        view_state = pdk.ViewState(
-            latitude=df['lat_prof'].mean(),
-            longitude=df['lon_prof'].mean(),
-            zoom=16,
-            bearing=0,
-            pitch=0,
-        )
-
-        r = pdk.Deck(
-            layers=[layer],
-            initial_view_state=view_state,
-            map_provider="mapbox",
-            map_style=pdk.map_styles.SATELLITE,
-            tooltip={"text": "{lon_prof}, {lat_prof}, {distance_difference}"},
-        )
-
-        st.pydeck_chart(r)
 
         # fig2 = plt.figure()
         # ax = fig2.add_subplot(111, projection=ccrs.PlateCarree())
