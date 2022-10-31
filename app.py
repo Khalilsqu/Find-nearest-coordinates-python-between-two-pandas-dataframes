@@ -200,12 +200,12 @@ if grid_elevation_points and profiles_points:
                 value=float(df['distance_difference'].max()),
                 step=0.1,
                 help="Filter nearest neighbor points by distance difference greater than the value",
-             )
+            )
             submit = st.form_submit_button("Apply filter")
 
         if submit:
             df = df[df['distance_difference'] <= filter]
-    
+
         st.write(df)
 
         csv = convert_df(df)
@@ -237,11 +237,11 @@ if grid_elevation_points and profiles_points:
         st.plotly_chart(fig, use_container_width=True, config=plotly_config)
 
         fig2 = px.scatter(df, x='x_prof', y='y_prof',
-                            color='distance_difference',
-                            hover_data=['lon_prof', 'lat_prof',
-                                        'lon_dem', 'lat_dem'],
-                            )
-        
+                          color='distance_difference',
+                          hover_data=['lon_prof', 'lat_prof',
+                                      'lon_dem', 'lat_dem'],
+                          )
+
         fig2.update_layout(
             xaxis_title='x-coordinate',
             yaxis_title='y-coordinate',
@@ -254,12 +254,12 @@ if grid_elevation_points and profiles_points:
         st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
 
         fig3 = px.scatter_mapbox(df, lat="lat_prof", lon="lon_prof",
-                                    color='distance_difference',
-                                    hover_data=['x_prof', 'y_prof',
-                                                'lon_dem', 'lat_dem'],
-                                    zoom=15, height=800, width=800,
-                                    mapbox_style="stamen-terrain")
-        
+                                 color='distance_difference',
+                                 hover_data=['x_prof', 'y_prof',
+                                             'lon_dem', 'lat_dem'],
+                                 zoom=15, height=800, width=800,
+                                 mapbox_style="stamen-terrain")
+
         fig3.update_layout(
             margin=dict(l=0, r=0, b=0, t=0),
             width=800, height=800,
@@ -271,10 +271,16 @@ if grid_elevation_points and profiles_points:
             "ScatterplotLayer",
             data=df,
             get_position=["lon_prof", "lat_prof"],
-            get_radius=5,
-            get_fill_color="distance_difference",
+            get_radius=10,
+            get_fill_color=["distance_difference", 140, 0],
             pickable=True,
             auto_highlight=True,
+            filled=True,
+            radius_scale=5,
+            radius_min_pixels=5,
+            radius_max_pixels=100,
+            line_width_min_pixels=1,
+
         )
 
         view_state = pdk.ViewState(
